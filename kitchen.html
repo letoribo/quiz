@@ -1,0 +1,37 @@
+<template name="kitchen">
+
+        <tr class="player {{selected}}">
+    <td>{{name}}</td>
+    <td>{{description}}</td>
+    <td class="text-right">{{status}}</td>
+  </tr>
+
+  {{#if Selected}}
+  {{#if statusIs 'published'}}
+  <table class="table table-condensed">
+                <thead>
+                    <tr>
+                        <th>Label</th>
+                        <th>Question</th>
+                        <th>Answer</th>
+                    </tr>
+                </thead>
+                <tbody>
+  
+   {{#each questions}}
+            {{> que}}
+        {{/each}}
+        </tbody>
+        </table>
+        {{/if}}
+        {{/if}}
+        
+</template>
+
+<template name="que">
+    <tr class="text-info">
+        <td>{{label}}</td>
+        <td><input type="text">{{question}}</td>
+        <td><input type="text">{{answer}}</td>
+    </tr>
+</template>

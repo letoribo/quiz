@@ -1,0 +1,36 @@
+<template name="UKitchen">
+    
+        <tr class="player {{selected}}">
+    <td>{{name}}</td>
+    <td>{{description}}</td>
+    <td class="text-right">{{status}}</td>
+  </tr>
+  <!--{{#if quizSelected}}-->
+  {{#if Selected}}
+  <!--{{#if statusIs 'published'}}-->
+  <table class="table table-condensed">
+                <thead>
+                    <tr>
+                        <th>Label</th>
+                        <th>Question</th>
+                        <!--<th>Answer</th>-->
+                    </tr>
+                </thead>
+                <tbody>
+  
+   {{#each Uquestions}}
+            {{> LIST}}
+        {{/each}}
+        </tbody>
+        </table>
+        <!--{{/if}}-->
+        {{/if}}
+</template>
+
+<template name="LIST">
+    <tr class="text-info">
+        <td>{{label}}</td>
+        <td>{{question}}</td>
+        <!--<td>{{answer}}</td>-->
+    </tr>
+</template>

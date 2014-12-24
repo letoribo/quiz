@@ -1,0 +1,111 @@
+<head>
+    <title>Quiz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" sizes="16x16 32x32" href="/favicon.ico?v=2">
+</head>
+<body>
+    {{> quiz}}
+</body>
+
+<template name="quiz">
+<center>
+    <div class="navbar">
+        <div class="navbar-inner">
+            <a class="brand">QuizArt</a>
+            <ul class="nav pull-right">            
+                <li><a>{{> loginButtons align="right"}}</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="container-fluid">
+        {{#if currentUser}}
+        <div class="row-fluid">
+            <div class="span4">
+                {{> ranking}}
+            </div>
+            <div class="span8">
+                {{> questions}}
+            </div>
+        </div>
+        <div class="row-fluid">
+            <div class="span12">
+                {{> activities}}
+            </div>
+        </div>
+       
+        {{#if isAdmin}}
+        <div class="well">
+        
+        {{#if selected_quiz}}
+          <h4>Edit {{selected_quiz}}</h4>
+        {{/if}}
+            <table class="table table-condensed">
+                <thead>
+                    <tr>
+                        <th>Quizzes:</th>
+                        <th>Description:</th>
+                        <th>Status:</th>
+                    </tr>
+                </thead>
+                <tbody>
+                
+            {{#each quizzes}}
+                      {{> kitchen}}
+                    {{/each}}
+        {{#if create}}            
+            <tr class="player {{selected}}">
+    <td><input type="text" class="Name" placeholder="Name" />{{name}}</td>
+    <td><input type="text" class="Description" placeholder="Description" />{{description}}</td>
+    <td class="text-right">{{status}}</td>
+  </tr>
+        
+        {{#if created}}            
+            <tr class="player {{selected}}">
+    <td><input type="text" class="Question" placeholder="Question" />{{name}}</td>
+    <td><input type="text" class="Answer" placeholder="Answer" />{{description}}</td>
+    <!--<td class="text-right">{{status}}</td>-->
+  </tr> 
+  
+        {{/if}}
+  
+        {{/if}}        
+             </tbody>
+        </table>
+            <input type="button" value="Create" class="btn btn-primary nextQuestion" />   
+            </div>
+            
+         <!--{{#each items}}
+    {{> article}}
+  {{/each}}   -->
+            
+            {{else}}
+        <div class="well">
+        <h4>List</h4>
+            <table class="table table-condensed">
+                <thead>
+                    <tr>
+                        <th>Quizzes:</th>
+                        <th>Description:</th>
+                        <th>Status:</th>
+                    </tr>
+                </thead>
+                <tbody>
+                
+            {{#with Uquizzes}}
+                      {{> UKitchen}}
+                    {{/with}}
+             </tbody>
+        </table>
+            <!--<input type="button" value="Create" class="btn btn-primary nextQuestion" />-->   
+            </div>    
+                {{/if}}    
+        
+        {{else}}
+        <div class="container">
+            <canvas id="surface" class="hero-unit"></canvas>
+            <h1 class="hero-unit">Please l@gin in order to get in the play!</h1>
+        </div>
+        {{/if}}
+    </div>
+    </center>
+</template>

@@ -1,0 +1,21 @@
+html{background-color: #18121e;font-size:100%;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+
+#surface { width:580px; height:350px;}
+h1.hero-unit {-webkit-transform: rotateX(45deg); /* Chrome, Safari, Opera  */
+    transform: rotateX(45deg);}
+    /*.container-fluid{padding:0}*/
+.container-fluid{padding:0;padding-right:20px;padding-left:20px;*zoom:1;background-color:#F5F2F9}
+.container-fluid:before,.container-fluid:after{display:table;line-height:0;content:""}.container-fluid:after{clear:both}p{margin:0 0 10px}    
+.container-fluid { height:100%;   
+background: #F5F2F9 url("star.jpg"); zoom:1}
+center {background-color: #18121e}
+.hero-unit{padding:60px;border-style: ridge;border-color:rgb(236, 213, 236);font-family: 'Courier New', Courier, monospace;
+font-size:80px;font-weight:200;line-height:56px;color:#e1f5f7;background-color:rgba(191, 142, 142, 0.25);
+-webkit-border-radius:6px;-moz-border-radius:6px;border-radius:6px}
+.hero-unit h1{margin-bottom:0;line-height:1;letter-spacing:-1px;}
+/*.hero-unit li{line-height:30px}*/
+.navbar .brand{padding-right:10px;padding-left:10px;margin:0 0 0 -5px;font-size: 24px;color:#75287D;text-shadow:0 -1px 0 rgba(0,0,0,.25)}
+.navbar .brand:hover,.navbar .brand:focus{text-decoration:none;}
+.login-link-text {font-size: 20px;}
+.player.selected {background-color:#FFD700;}
+.text-info:hover, .text-info:focus{background-color:#FFD700; color:#1C5909}
