@@ -7,7 +7,7 @@ europe = [
 	{country: "Belarus", capital: "Minsk"},
 	{country: "Belgium", capital: "Brussels"},
 	{country: "Bosnia and Herzegovina", capital: "Sarajevo"},
-	{country: "Bulgaria", capital: "Sofia"},
+	{country: "Bulgaria", capital: "Sofia"}/*,
 	{country: "Croatia", capital: "Zagreb"},
 	{country: "Cyprus", capital: "Nicosia"},
 	{country: "Czech Republic", capital: "Prague"},
@@ -48,5 +48,5 @@ europe = [
 	{country: "Turkey", capital: "Ankara"},
 	{country: "Ukraine", capital: "Kiev"},
 	{country: "United Kingdom", capital: "London"},
-	{country: "Vatican City", capital: "Vatican City"}
+	{country: "Vatican City", capital: "Vatican City"}*/
 ];

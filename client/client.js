@@ -1,30 +1,40 @@
-// Collection, not db mapped, used only on client
-Answers = new Meteor.Collection(null);
-ListOfQuestions = new Meteor.Collection(null);
-UQuestions = new Meteor.Collection(null);
 window.log = function() {
   try {
     return console.log.apply(console, arguments);
   } catch (_error) {}
 };
 
+// Collection, not db mapped, used only on client
+Answers = new Meteor.Collection(null);
+ListOfQuestions = new Meteor.Collection(null);
+UQuestions = new Meteor.Collection(null);
 // Settings for Accounts module
 Accounts.ui.config({
   passwordSignupFields: 'USERNAME_AND_OPTIONAL_EMAIL'
 });
 
+_resetQuiz = function() { 
+    Session.set("created", false); 
+    Session.set("selected_quiz", null); 
+    Session.set("create", false); Session.set("state", false);
+    Session.set("complete", false); //console.log("quiz resetted", Session.get("state"));
+    Session.set("selected_qa", null);
+  }
+  _resetQuestion = function() {
+    Session.set("correct_answer", "x");
+    Session.set("selected_answer", "y");
+    Session.set("selected_question", null);
+  }
 /*
  * Autorun methods run whenever their dependencies change
  */
-Deps.autorun(function () { //log(Blaze);
+Deps.autorun(function () {
   // user handling (only called when logging in/out)
   if (Meteor.user()) {
   	 Session.set("myBoolean", true);
     var user = Meteor.user();
-    freq = 10000; //clearInterval(Interval);
     $(".container-fluid").show(); $("center").find('img').remove();
     if (user.profile) { 
-      //console.log(user.profile);
       username = user.profile.name == "" ? user.services.github.username : user.profile.name;
       Meteor.defer(function () {
         $( "#login-name-link" ).text( username + "▾");
@@ -34,11 +44,12 @@ Deps.autorun(function () { //log(Blaze);
       username = user.username;
     }
     log("user logged in: " + username); Session.set("state", false);        
-    Meteor.call("createPlayerIfNotExist", username, _onCreatePlayerCallback);
+    Meteor.call("createPlayerIfNotExist", username, function(error, playerId) { Session.set("playerId", playerId); });
     _resetQuestion();
-    console.log("%cMeteor.user(); ", "color:orange; background:blue; font-size: 16pt", Meteor.user());
-    console.log("%cMeteor.users.find().count(); ", "color:orange; background:blue; font-size: 16pt", Meteor.users.find().count());
-    console.log("%cMeteor.users.find().fetch(); ", "color:orange; background:blue; font-size: 16pt", Meteor.users.find().fetch());         
+    _resetQuiz();
+    log("%cMeteor.user(); ", "color:orange; background:blue; font-size: 16pt", Meteor.user());
+    log("%cMeteor.users.find().count(); ", "color:orange; background:blue; font-size: 16pt", Meteor.users.find().count());
+    log("%cMeteor.users.find().fetch(); ", "color:orange; background:blue; font-size: 16pt", Meteor.users.find().fetch());         
   } 
   else {
     var surface, ctx, time = 0.0;
@@ -46,19 +57,13 @@ Deps.autorun(function () { //log(Blaze);
     var state = false;
  
     function colorGenerator(value){ 
-      freq = 1000;//intervalArray = [];
-      timer = function(){
-        Session.set('time', new Date);
-        Time = Session.get('time') || new Date;
-        sec = Time.getSeconds();
-        min = Time.getMinutes();
-        hour = Time.getHours();
-        coef = 0.016666666666666666*sec;
-        //intervalArrayPosition = intervalArray.push(Interval) - 1;
-      }  //console.log(sec, min, hour)
-   
-      Interval = setInterval(timer, freq); //console.log(Interval); 
-      if (typeof coef !== "undefined") {
+      Session.set('time', new Date);
+      Time = Session.get('time') || new Date;
+      sec = Time.getSeconds();
+      min = Time.getMinutes();
+      hour = Time.getHours();
+      coef = 0.016666666666666666*sec;
+      if (!_.isUndefined(coef)) {
 	     var r = Math.round((Math.sin(value*coef*Math.PI)+1.0)*127.5);
         var g = Math.round((Math.cos((value+0.33)*coef*Math.PI)+1.0)*127.5);
         var b = Math.round((Math.sin((value+0.66)*coef*Math.PI)+1.0)*127.5);
@@ -78,7 +83,6 @@ Deps.autorun(function () { //log(Blaze);
           state = true;
         }
       }
- 
       else {
         frameCounter += 1;
         time += 0.125;
@@ -88,28 +92,25 @@ Deps.autorun(function () { //log(Blaze);
           state = false;
         }
       }
-    //log(frameCounter, time);
     }
 
     function draw(){
       requestAnimationFrame(draw, surface);
       var gradient = ctx.createLinearGradient(0, 0, 500, 500);
       ctx.fillStyle = gradient;
-      //console.log(colorGenerator(time));
       gradient.addColorStop(0, colorGenerator(time) || "black");
       gradient.addColorStop(0.5, colorGenerator(time+0.5) || "white");
       gradient.addColorStop(1, colorGenerator(time) || "black"); 
       ctx.fillRect(0, 0, 500, 500);
       ctx.shadowBlur=20;
       ctx.shadowColor="black";
-      if (typeof coef !== "undefined") {
+      if (!_.isUndefined(coef)) {
         ctx.globalAlpha=coef/2;
         var x = surface.width / 2;
         var y = surface.height / 2;
-  
         ctx.font = '30pt Candara'; 
         ctx.textAlign = 'center';
-        ctx.fillStyle = colorGenerator(sec); //'#A467CC';
+        ctx.fillStyle = colorGenerator(sec);
         ctx.fillText('Welcome to Quiz', x, y);
       }  
       process();
@@ -117,16 +118,13 @@ Deps.autorun(function () { //log(Blaze);
  
     var init = function (){
       surface = document.querySelector('#surface');
-      ctx = surface.getContext('2d'); //log(ctx);
-      draw(); //log("draw canvas");  
+      ctx = surface.getContext('2d');
+      draw();
     }
     Session.set("playerId", null);
     Session.set("myBoolean", true);
 
     if (Session.get("myBoolean")) {
-      //setTimeout(init(), 0);
-      //log(Session.get("myBoolean"));
-      //log(document.body);
       if (document.body) {
         $(".container-fluid").hide();
         var img = "<img src='bug.png'>";
@@ -136,45 +134,57 @@ Deps.autorun(function () { //log(Blaze);
 
     Template.quiz.helpers({
     	rendered: function(){
-        init();
+        init(); Session.set("publ", null);
       }, 
-      isAdmin: function () { //log(Session.get("yourID"));
+      isAdmin: function () {
         return status();
       },
       quizzes: function () {
         return Quizzes.find({}, {sort: { name: 1}});
       },
       Uquizzes: function () {
-        return Quizzes.findOne({status: "published"}); //Session.get("selected_quiz")});
+        return Quizzes.find({status:'published'}).fetch();
       },
-      create: function () {
+      create: function () { 
         return Session.get("create");
       },
       created: function () {
-        return Session.get("created");
+        return Session.get("created") ? "Finish" : "Create";
       },
       selected_quiz: function () {
-        var selected = Session.get("selected_quiz"); Meteor.call("getquizzes", selected, _onQuizzes);
         var quiz = Quizzes.findOne({name: Session.get("selected_quiz")});
         if (quiz)
         return quiz && quiz.name;
       },
-      items: function() {
-        return Quizzes.find();
+      logs: function () {
+        return Logs.find().fetch();
+      },
+      handData: function (){
+        Time = Session.get('time') || new Date;
+        Sec = Time.getSeconds();
+        Min = Time.getMinutes();
+        Hour = Time.getHours();
+        return {
+    	    Hours: Hour,       
+          Minutes: Min,      
+          Seconds: Sec      
+        }
+      },
+      state: function () {
+        return Session.get("state");
+      },
+      status: function () {
+        return Session.get("publ") == "published" ? Session.get("selected_quiz") : null;
+      },
+      isComplete: function () { if (Session.get("selected_quiz") !== null)
+        return Session.get("complete");
       }
     });
+    
   }
-
-/*Template.article.helpers({  
-  statusIs: function(status) {
-    return this.status === status;
-  }
-});*/
-  
-  _onCreatePlayerCallback = function(error, playerId) {
-  Session.set("playerId", playerId);    
-};
-
+  /*_onCreatePlayerCallback = function(error, playerId) {
+    Session.set("playerId", playerId);    
+  };*/
 });
  
 // subscriptions to published (change-)events from server
@@ -184,92 +194,131 @@ Deps.autorun(function () {
 });
 
 Template.quiz.events({
-  'click .nextQuestion': function () { //log(this, this.name);
-    Session.set("created", false);
-    //var state = Session.get("create") === false ? true: false; 
-    var state = !Session.get("created");
-    //log(state, Session.get("created")); 
-    
-    $(".Name, .Description").val("");
-    var _new = Quizzes.findOne({name: "new"});
-    if (! _new && state == true) {
-      Quizzes.insert({name: "new", description: "about", status: "unpublished"});
-      Meteor.defer(function () {
-        Session.set("ID", Quizzes.findOne({name: "new"})._id); //var selected = "new"; Meteor.call("getquizzes", selected, _onQuizzes);
-      });      
+  'mousedown .destroy': function (event) { event.preventDefault();
+    if(confirm("Are you sure?")) {
+    //Quizzes.update(this._id, {$set: {name: "new", description: "about", status: "unpublished", questions: [{}]}});
+    Quizzes.remove(this._id); 
+    _resetQuiz();}
+  },
+  'click #Create': function () {
+    Session.set("publ",null);
+    create();
+  },
+  'click tr.player': function (e) {e.preventDefault(); Session.set("created", false);
+    if (this.name == "new" || this.description == "about" || _.isEqual(Session.get("create"), true)) return false;
+    if (this.name && this.status) { Session.set("selected_quiz", this.name); 
+      _resetQuestion();
+      state = state === false ? true: false;
+      Session.set("state", state); Session.set("publ", this.status); Session.set("complete", false);
+      var selected = Session.get("selected_quiz");
+      Meteor.call("getquizzes", selected);
     }
-
-    log(//state, Session.get("created"),
-     Session.get("ID"));
-    Session.set("create", state);
-    
   },
-  'click tr.player': function (e) { //console.log(this, e.target);
-    if (this.status) { Session.set("selected_quiz", this.name);}
-  },
-  'keyup .Name': function (e) {
-    //log(e.target.value); //log(Session.get("ID"));
+  'keyup .Name': function (e) { Session.set("selected_quiz", e.target.value);
     Quizzes.update(Session.get("ID"), {$set: {name: e.target.value}});
     check();
-    //log(Quizzes.findOne({name: e.target.value}));
   },
   'keyup .Description': function (e) { 
-    //log(Session.get("ID"));
     Quizzes.update(Session.get("ID"), {$set: {description: e.target.value}});
     check();
-    //log(Quizzes.findOne({description: e.target.value}));
+  },
+  'keyup': function (e) { 
+    e.preventDefault(); 
+    e.keyCode == 13 ? create() : null;
   }
 });
 
-var check = function(){
+var check = function(){// надо проверять, чтоб не было одинаковых имён
   ($('.Description').val() == "" || $('.Name').val() == "") ? Session.set("created", false) : Session.set("created", true);
 }
-
+var create = function() {
+  if (_.isEqual($('.Name').val(), "") || _.isEqual($('.Description').val(), "")) return null
+  else next();
+}	
+var next = function() {
+  var created = Session.get("created");
+  $(":text").val("");
+  var _new = Quizzes.find({name: {$in: ["new", ""]}}).fetch();
+  if (_.isEmpty(_new)) {
+    if (created == true) {Session.set("create", false); Session.set("state", true);}
+    else { //if any field is empty
+      Quizzes.insert({name: "new", description: "about", status: "unpublished", author: "", questions: [{}]});
+      Meteor.defer(function () {
+        Session.set("ID", Quizzes.findOne({name: "new"})._id); 
+        Session.set("create", true);
+        Session.set("selected_quiz", "new");
+        Meteor.defer(function () {$('input[type="text"]')[0].focus();});    
+      });      
+    }
+  }
+  else{
+  	 Session.set("create", true); 
+  	 Session.set("ID", Quizzes.findOne({name: {$in: ["new", ""]}})._id);
+    Meteor.defer(function () {
+      $('input[type="text"]').eq(0).focus();
+    });
+  }
+}
+/*Meteor.startup(function (){
+  _resetQuiz = function() { 
+    Session.set("created", false); 
+    Session.set("selected_quiz", null); 
+    Session.set("create", false); Session.set("state", false);
+    Session.set("complete", false); //console.log("quiz resetted", Session.get("state"));
+  }
+  _resetQuestion = function() {
+    Session.set("correct_answer", "x");
+    Session.set("selected_answer", "y");
+    Session.set("selected_question", null);
+  }
+  _resetQuiz();
+  _resetQuestion();
+});*/
 // event when user select the next question
 Template.questions.events({
-  // get next question (random, from server)
-  'click .nextQuestion': function (a) {
+  // get next question from server
+  'click .nextQuestion': function () {
     // first reset the session values
     _resetQuestion();
+    var selected = Session.get("selected_quiz");
+    var count = Logs.find({quiz: selected, name: username}).count();
+     //console.log("quiz.count ", count);
+     if (!_.isNull(Template.kitchen.questions())) Session.set("selected_qa", Template.kitchen.questions()[count]); ///////////////
+     if (!_.isNull(Template.UKitchen.Uquestions())) Session.set("selected_qa", Template.UKitchen.Uquestions()[count])
+    if (selected !== "new" && !_.isNull(selected)){
     // now get the question from the server asynchronous
-    //Meteor.call("getRandomQuestion", _onQuestionReceive);
-    
-    Meteor.call("getQuestion", Session.get("yourID"), _onQuestionReceive);
+    Meteor.call("getQuestion", Session.get("yourID"), selected, _onQuestionReceive);
+    var inc = 1; Meteor.call("updateCount", Session.get("playerId"), inc);
+    //Meteor.call("getQuestion", Session.get("yourID"), selected, _onQuestionReceive);
+ }
+    //Meteor.call("getQuestion", selected, username, _onQuestionReceive);
     return false;
   }
 });
 
-// callback for receiving a new random question
+// callback for receiving a new question
 _onQuestionReceive = function(error, question) {
-  console.log("got question: %o", question);
-  if (question) { console.log(question);
+  //console.log("got question: %o", question);
+    if (_.isUndefined(question)) {Session.set("complete", true);}
 	 // determine the correct answer and shuffle the answers
-    var theAnswers = question["answers"];
-    var correct = theAnswers[0];
-    theAnswers = _.shuffle(theAnswers);
-    question["answers"] = theAnswers;
-  }
+	 else{
+      var theAnswers = question["answers"];
+      var correct = theAnswers[0];
+      theAnswers = _.shuffle(theAnswers);
+      question["answers"] = theAnswers;
+    
   // update the values in the session for reactive computation
-  Session.set("selected_question", question);
-  Session.set("correct_answer", correct);
-  Session.set("selected_answer", "");
-
+      Session.set("selected_question", question);
+      Session.set("correct_answer", correct);
+      Session.set("selected_answer", "");
   // fill the answer-collection with the possible answers
-  Answers.remove({});
-  _.each(theAnswers, function(n, i) {
-    Answers.insert({label: String.fromCharCode(65 + i), text: n });
-  });
+      Answers.remove({});
+      _.each(theAnswers, function(n, i) {
+      Answers.insert({label: String.fromCharCode(65 + i), text: n });
+    });
+  }
 };
 
-_resetQuestion = function() {
-  Session.set("correct_answer", "x");
-  Session.set("selected_answer", "y");
-  Session.set("selected_question", null);
-}
-
-_resetQuiz = function() {////////////////////////////////////////
-  Session.set("selected_quiz", null);
-}
 // Template functions for the questions
 Template.questions.helpers({
   questionSelected: function () {
@@ -282,8 +331,9 @@ answerChosen: function () {
   return Session.get("selected_answer") === Session.get("correct_answer");
 }
 });
+
 Template.question.helpers({
-	questionSelected: function () {
+questionSelected: function () {
   return Session.get("selected_question");
 },
   answers: function () {
@@ -293,30 +343,25 @@ Template.question.helpers({
 // event when user clicks on an answer
 Template.answer.events({
   'click .answer': function () {
-    console.log("chosen answer: %o", this);
+    //console.log("chosen answer: %o", this);
+    var selected = Session.get("selected_quiz");
     var correct = Session.get("correct_answer");
-    var points = -5; var inc = 1;
+    var points = -5;
     var message = "was wrong"
-
     if (this.text === correct) {
       points = 10;
       message = "answered right"
     }
-
 	 // update score of player
-	 console.log("%s; score: %d", message, points);
     Meteor.call("updateScore", Session.get("playerId"), points);
-    Meteor.call("updateCount", Session.get("playerId"), inc);
 	 // write it in the activity log
-    Meteor.call("writeLog", username, points, message);
-
+    Meteor.call("writeLog", username, points, message, selected);
     Session.set("selected_answer", this.text)
     return false;
   }
 });
 var status = function(){
   var player = Players.findOne(Session.get("yourID")) || "";
-  //console.log(_.isEqual(player.role, "admin"));
   var isAdmin = _.isEqual(player.role, "admin")
   return isAdmin;
 }
@@ -327,12 +372,10 @@ Template.ranking.helpers({
   players: function () {
     return Players.find({}, {sort: {score: -1, name: 1}});
   },
-  isAdmin: function () { //console.log(Session.get("yourID"));
+  isAdmin: function () {
     return status();
   },
   makeAdmin: function () {
-  	 /*var users = Players.find({role:'user'}).fetch();
-    var usersExist = _.isEqual(Session.get("selected_role"), "user"); console.log(usersExist);*/
     return Players.find({role:'user'}).fetch();
   },
   selected_name: function () {
@@ -348,6 +391,7 @@ Template.ranking.events({
     Players.update(Session.get("selected_player"), {$set: {role: "admin"}});
   }
 });
+
 Template.player.selected = function () { 
     var currentPlayer = Session.equals("playerId", this._id); 
     if (currentPlayer == true) {Session.set("yourID", this._id)}
@@ -357,90 +401,241 @@ Template.player.selected = function () {
   };	
 
 Template.player.events({
-  'click': function () { log("clicked " + this.role);
+  'click': function () {
     Session.set("selected_player", this._id);
-    //console.log(Session.get("selected_player"));
   },
-  'mouseover': function () { //console.log("hover " + this.role);
+  'mouseover': function () {
     Session.set("selected_role", this._role);
   }
 });
 
-Session.set("selected_quiz", null); Session.set("state", false); var state = false; Session.set("create", false);
+var state = false; ////////////////////////////////////
 Template.kitchen.events({
-  'click': function () {
-    Meteor.call("getquestions", _onQReceive);
-    if (this.name) { //console.log(this.name == Session.get("selected_quiz"))
-    	 // Session.set("selected_quiz", this.name); 
-    	 state = state === false ? true: false; log(state, this.name);
-      Session.set("state", state);    	  
-    }  
+  'click #Add': function (event) { event.preventDefault(); Add();    
+  },
+  'click #Publish': function () {
+    var warning = function () {
+    	alert("At least 4 questions to be published!"); return null;
+    }  	 
+    _.size(this.questions) > 4 ? Quizzes.update(this._id, {$set: {status: "published", author: username}}) : warning();
+    Meteor.defer(function () {
+      Session.set("publ", "published");
+      log(_.isEqual(this.status, "published"));  Session.set("state", false);
+    //if (_.isEqual(this.status, "published")) Session.set("state", false); Session.set("publ", "published");
+    });
   }
 });
-_onQReceive = function(error, q) { if (ListOfQuestions.find().count() == 0)
-  //console.log("got Questions: %o", q);
-  _.each(q, function(n, i) {//console.log(n, i);
-    ListOfQuestions.insert({label: i + 1, question: n.question, answer: n.answers[0] });
-  });
-};
-_onQuizzes = function(error, q) { /*if (ListOfQuestions.find().count() == 0)
-  _.each(q, function(n, i) {//console.log(n, i);
-    ListOfQuestions.insert({label: i + 1, question: n.question, answer: n.answers[0] });
-  });*/
-  //if (q) 
-  console.log("got Quizzes: ", q);
-};
+
+var Add  = function() {
+  $('input[type="text"]').eq(0).focus();
+  if ($('input[type="text"]').eq(0).val() == "" || $('input[type="text"]').eq(1).val() == "") return false;
+  Session.set("inc", inc++);
+  var update = Quizzes.findOne({name: Session.get("selected_quiz")});
+  Session.set("keyup_q", null); Session.set("keyup_a", null);
+  Quizzes.update(update._id,{$push:{questions:{question: $('.Question').val(), answer: $('.Answer').val()}}});  	 
+  $(".Question, .Answer").val("");
+}
 
 Template.kitchen.helpers({
-  selected: function () { //console.log(Session.get("selected_quiz"), this.name);
+  rendered: function(){
+    $('input[type="text"]').eq(0).focus();
+  },	
+  selected: function () {
     var selected = Quizzes.findOne({name: Session.get("selected_quiz")});
-    return Session.equals("selected_quiz", this.name) ? "warning" : '';
-  },
-  Selected: function () {
-	  return Session.get("state");
-  },
-  questions: function () { //console.log(ListOfQuestions.find());
-    return ListOfQuestions.find();
-  },
-  /*quizSelected: function () { console.log(Session.get("selected_quiz"));
-    return Session.equals("selected_quiz", this.name);
-  },*/
-  statusIs: function(status) {
-    return this.status === status;
-  }
-});	
-
-
-Template.UKitchen.helpers({
-  selected: function () { //console.log(Session.get("selected_quiz"), this.name);
-    var selected = Quizzes.findOne({name: Session.get("selected_quiz")});
-    //log(Session.get("selected_quiz"), this.name);
     return Session.equals("selected_quiz", this.name) ? "warning" : '';
   },
   Selected: function () {
 	 return Session.get("state");
   },
-  Uquestions: function () { //console.log(ListOfQuestions.find());
-    return UQuestions.find();
+  questions: function () {
+    var selected = Session.get("selected_quiz");
+    var sel = Quizzes.findOne({name: selected});
+    if (_.isUndefined(sel)) return null; 
+    var author = sel.author;
+    var status = sel.status;
+    var questions = _.map(sel.questions, function(num, key){ num.label = key; num.author = author; num.status = status; return num });
+    return _.isEqual(selected, "capitals") || _.isEqual(status, "unpublished") ? _.map(sel.questions, function(num, key){ num.label = key + 1; num.author = author; num.status = status; return num }) : _.rest(questions);
+  },
+  statusIs: function(status) {
+    return this.status === status;
+  },
+  stat: function () {
+	  return "unpublished";
+  },
+  authorIs: function(author) {
+    return this.author === author;
+  },
+  auth: function () {
+	  return username;
+  },
+  nameIs: function(name) {
+    return this.name === name;
+  },
+  Sel_name: function () {
+    return Session.get("selected_quiz");
+  },
+  keyup_q: function () {
+    return Session.get("keyup_q");
+  },
+  keyup_a: function () {
+    return Session.get("keyup_a");
+  },
+  button: function () {
+    return this.status == "published" ? "Close" : "Publish";
+  }
+});	
+
+var inc = 0;
+Template.que.events({
+  'keyup .Question': function (e) {
+    var q = e.target.value;
+    Session.set("keyup_q", q);
+  },
+  'keyup .Answer': function (e) {var a = e.target.value; 
+     Session.set("keyup_a", a);
+  },  
+  'click': function () {
+    Session.set("selected_qa", this); log("clicked ", Session.get("selected_qa"));
+  },
+  'keyup': function (e) { 
+    e.preventDefault(); 
+    e.keyCode == 13 ? Add() : null;
+  }
+});
+
+Template.que.helpers({ 
+  rendered: function(){
+    $('input[type="text"]').eq(0).focus();
+  }, 
+  selected_q: function () {
+    return _.isUndefined(this.question);
+  },
+  selected_a: function () {
+    return _.isUndefined(this.answer);
+  },
+  questionIs: function(question) {
+    return this.question === question;
+  },
+  Sel_question: function () { if(Session.get("selected_qa")) 
+    return Session.get("selected_qa").question;
+  },
+  auth: function () {
+	  return _.isEqual(this.author, username);
+  },
+  isUnpublished: function(status) {
+    return this.status === "unpublished";
+  }
+});
+
+Template.list.helpers({ 
+  questionIs: function(question) {
+    return this.question === question;
+  },
+  Sel_question: function () { if(Session.get("selected_qa")) 
+    return Session.get("selected_qa").question;
+  }
+});
+Template.list.events({  
+  'click': function () {
+    Session.set("selected_qa", this); log("clicked ", Session.get("selected_qa"));
+  }
+});
+
+Template.chart.events({ 
+  'click #CloseChart': function () { Meteor.call("resetCount", Session.get("playerId"));
+  _resetQuiz();
+ }
+});
+Template.chart.helpers({ 
+  rendered: function(){Session.set("state", false);
+    return !_.isUndefined(Logs.findOne({quiz: Session.get("selected_quiz")})) ? chart() : null; 
+  },
+  data: function () {
+    var logdata = Logs.findOne({name: username});
+    return {
+    	nickname: logdata.name,
+      resultOf: Session.get("selected_quiz")
+    };
+  },
+  participants: function () {
+  	 var inLogs = Logs.find({quiz: Session.get("selected_quiz")}).fetch();
+    var arr = []; _.each(inLogs, function (n, i) { return arr.push(n.name)});
+    participants = _.map(_.uniq(arr), function(n){ return {"name": n}; }); 
+    return participants;
+  }
+});
+
+var chart = function (){
+  _.each(participants, function (n, i) {
+    var selected = Session.get("selected_quiz");
+    var Name = n.name;
+    var wrong = Logs.find({name: Name, quiz: selected, message: "was wrong"}).count();
+    var right = Logs.find({name: Name, quiz: selected, message: "answered right"}).count();   
+    var data = [
+      {
+      value: wrong, color:"#F7464A", highlight: "#FF5A5E", label: "Was wrong"
+      },
+      {
+      value: right, color: "#46BFBD", highlight: "#5AD3D1", label: "Was right"
+      },
+      {
+      value: _.size(Template.kitchen.questions() || Template.Kitchen.Uquestions()) - wrong - right,
+      color: "#AFC5C3",
+      highlight: "#BFCFCC",
+      label: "Still not answered"
+    }
+    ]    
+
+    var options = {
+      segmentShowStroke : true,
+      segmentStrokeColor : "#fff",
+      segmentStrokeWidth : 2,
+      percentageInnerCutout : 50,
+      animationSteps : 50, //100,
+      animationEasing : "easeOutQuart", //"easeOutBounce",
+      animateRotate : true,
+      animateScale : true, //false,
+      legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<segments.length; i++){%><li><span style=\"background-color:<%=segments[i].fillColor%>\"></span><%if(segments[i].label){%><%=segments[i].label%><%}%></li><%}%></ul>"
+    };
+
+    var d = $('#' + Name);
+    var dt = d.get(0).getContext('2d');
+    new Chart(dt).Doughnut(data, options);  	 
+  })
+}
+
+Template.UKitchen.helpers({
+  selected: function () {
+    var selected = Quizzes.findOne({name: Session.get("selected_quiz")});
+    return Session.equals("selected_quiz", this.name) ? "warning" : '';
+  },
+  Selected: function () {
+	 return Session.get("state");
+  },
+  Uquestions: function () {
+    var selected = Session.get("selected_quiz"); 
+    Meteor.call("getquizzes", selected);
+    var sel = Quizzes.findOne({name: selected});
+    if (_.isUndefined(sel)) return null;
+    return selected == "capitals" ? _.map(sel.questions, function(num, key){num.label = key + 1; return num}) : _.map(_.rest(sel.questions), function(num, key){num.label = key + 1; return num});
+  },
+  nameIs: function(name) {
+    return this.name === name;
+  },
+  Sel_name: function () {
+    return Session.get("selected_quiz");
   }
 });
 
 Template.UKitchen.events({
   'click': function () {
-    //console.log("clicked " + this.name);
     Meteor.call("getquestions", _onUQ);
-    //Session.set("selected_quiz", this.name);
-    if (this.name) {
-      //console.log(this.name); 
-      state = state === false ? true: false; //log(state, this.name);
-      Session.set("state", state);
-    }
   }
 });
 _onUQ = function(error, q) {
   //console.log("got Questions: %o", q);
   if (UQuestions.find().count() == 0)
-  _.each(q, function(n, i) {//console.log(n, i);
+  _.each(q, function(n, i) {
     UQuestions.insert({label: i + 1, question: n.question });
   });
 };
@@ -449,7 +644,7 @@ _onUQ = function(error, q) {
  * Template functions for activity log
  */
 Template.activities.logs = function () {
-  return Logs.find({}, {sort: {timestamp: -1}});
+  return Logs.find({}, {limit: 10, sort: {timestamp: -1}});
 };
 
 Template.logentry.isError = function() {
@@ -461,7 +656,7 @@ UI.body.events({
     function myFunction() {
       wd = Math.floor((Math.random() * ($(window).width() - $("img").width())));
       hg = Math.floor((Math.random() * (0.5 * $(window).width() - $("img").height())));
-      console.log(wd, hg); $("html").css({'background-color': 'rgb(' + wd%32 + ', ' + hg%32 + ', ' + _.sample(_.range(0,33)) + ')'});      
+      $("html").css({'background-color': 'rgb(' + wd%32 + ', ' + hg%32 + ', ' + _.sample(_.range(0,33)) + ')'});      
     }
     myFunction();
     $('img').parent().css({position: 'relative'});

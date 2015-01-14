@@ -9,5 +9,5 @@ if ( Meteor.users.find().count() === 0 ) {
     }
   });
   Players.insert({name: "admin", role: "admin", score: 0, count: 0});
-  Quizzes.insert({name: "capitals", description: "geography", status: "published"});
+  Quizzes.insert({name: "capitals", description: "geography", author: "admin", status: "published"});
 }

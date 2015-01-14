@@ -1,37 +1,53 @@
 <template name="kitchen">
-
-        <tr class="player {{selected}}">
+  <tr class="player {{selected}}">
     <td>{{name}}</td>
     <td>{{description}}</td>
+    <td>{{author}}</td>
     <td class="text-right">{{status}}</td>
+    {{#unless nameIs 'capitals'}}
+    {{#if statusIs stat}}
+    <td class="destroy"></td>
+    {{else}}
+    {{#if authorIs auth}}<td class="destroy"></td>{{/if}}
+    {{/if}}
+    {{/unless}}
   </tr>
 
   {{#if Selected}}
-  {{#if statusIs 'published'}}
+  {{#if nameIs Sel_name}}
   <table class="table table-condensed">
-                <thead>
-                    <tr>
-                        <th>Label</th>
-                        <th>Question</th>
-                        <th>Answer</th>
-                    </tr>
-                </thead>
-                <tbody>
-  
-   {{#each questions}}
-            {{> que}}
-        {{/each}}
-        </tbody>
-        </table>
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Question{{#if keyup_q}}: "{{keyup_q}}"{{/if}}</th>
+        {{#if statusIs stat}}
+        <th>Answer{{#if keyup_a}}: "{{keyup_a}}"{{/if}}</th>
+        <th><input type="button" id="Add" value="Add" class="btn btn-primary nextQuestion" />
+        <input type="button" id="Publish" value={{button}} class="btn btn-primary" /></th>
+        {{else}}
+        {{#if authorIs auth}}<th>Answer</th>{{/if}}
         {{/if}}
-        {{/if}}
-        
+      </tr>
+    </thead>
+    <tbody>  
+    {{#each questions}}
+    {{> que}}
+    {{/each}}
+    </tbody>        
+  </table>
+  {{/if}}
+  {{/if}}        
 </template>
 
 <template name="que">
-    <tr class="text-info">
-        <td>{{label}}</td>
-        <td><input type="text">{{question}}</td>
-        <td><input type="text">{{answer}}</td>
-    </tr>
+  <tr class="text-info">    
+    <td><b>&#8226;</b> {{label}}{{#if questionIs Sel_question}}<b> &#187;</b>{{/if}}</td>
+    {{#if isUnpublished}}
+    <td>{{#if selected_q}}<input type="text" class="Question" placeholder="Question" >{{/if}}{{question}}</td>
+    <td>{{#if selected_a}}<input type="text" class="Answer" placeholder="Answer" >{{/if}}{{answer}}</td>    
+    {{else}}
+    <td>{{question}}</td>
+      {{#if auth}}<th>{{answer}}</th>{{/if}}
+    {{/if}}
+  </tr>
 </template>

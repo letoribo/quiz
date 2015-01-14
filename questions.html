@@ -1,34 +1,34 @@
 <template name="questions">
-    <div class="well">
-        <h4>Questions</h4>
-        {{#if questionSelected}}
-            {{#if answerSelected}}
-                {{#if answerChosen}}
-                    <div class="text-success"><strong>Good, your answer was correct.</strong></div>
-                {{else}}
+  <div class="well">
+    <h4>Questions</h4>
+      {{#if questionSelected}}
+        {{#if answerSelected}}
+          {{#if answerChosen}}
+            <div class="text-success"><strong>Good, your answer was correct.</strong></div>
+          {{else}}
                     <div class="text-error"><strong>Sorry, your answer was not correct.</strong></div>
-                {{/if}}
+          {{/if}}
                 <input type="button" value="Next Question" class="btn btn-primary nextQuestion"><br>
-            {{else}}
-                {{> question}}
-            {{/if}}
+        {{else}}
+          {{> question}}
+        {{/if}}
         {{else}}
             <input type="button" value="Select Question" class="btn btn-primary nextQuestion"><br>
-        {{/if}}
-    </div>
+      {{/if}}
+  </div>
 </template>
 
 <template name="question">
-    <strong><em>
-        Question {{questionSelected.id}}: {{questionSelected.question}}<br>
-        {{#each answers}}
-            {{> answer}}
-        {{/each}}
-    </em></strong>
+  <strong><em>
+    Question {{questionSelected.id}}: {{questionSelected.question}}<br>
+      {{#each answers}}
+        {{> answer}}
+      {{/each}}
+  </em></strong>
 </template>
 
 <template name="answer">
-    <div class="text-info answer">
-        {{label}}:&nbsp;{{text}}
-    </div>
+  <div class="text-info answer">
+    {{label}}:&nbsp;{{text}}
+  </div>
 </template>
