@@ -202,6 +202,7 @@ Template.quiz.events({
   },
   'click #Create': function () {
     Session.set("publ",null);
+    if (Quizzes.find({name: $('.Name').val()}).count() > 1) {alert ('There is already "' + $('.Name').val() + '" quiz'); return null;}
     create();
   },
   'click tr.player': function (e) {e.preventDefault(); Session.set("created", false);
@@ -223,12 +224,14 @@ Template.quiz.events({
     check();
   },
   'keyup': function (e) { 
-    e.preventDefault(); 
+    e.preventDefault();
+    //check for duplicate names
+    if (Quizzes.find({name: $('.Name').val()}).count() > 1) {alert ('There is already "' + $('.Name').val() + '" quiz'); return null;}
     e.keyCode == 13 ? create() : null;
   }
 });
 
-var check = function(){// надо проверять, чтоб не было одинаковых имён
+var check = function(){
   ($('.Description').val() == "" || $('.Name').val() == "") ? Session.set("created", false) : Session.set("created", true);
 }
 var create = function() {
