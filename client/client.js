@@ -145,7 +145,7 @@ _resetQuiz = function() {
         return status();
       },
       quizzes: function () {
-        return Quizzes.find({}, {sort: { name: 1}});
+        return Quizzes.find({}, {sort: {timestamp: -1}});
       },
       Uquizzes: function () {
         return Quizzes.find({status:'published'}).fetch();
