@@ -455,8 +455,7 @@ Template.kitchen.helpers({
     var author = sel.author;
     var status = sel.status;
     var questions = _.map(sel.questions, function(num, key){ num.label = key; num.author = author; num.status = status; return num });
-    var quest = _.map(sel.questions, function(num, key){ num.label = key + 1; num.author = author; num.status = status; return num });
-    var res = _.isEqual(selected, "capitals") || _.isEqual(status, "unpublished") ? quest : _.rest(questions);
+    var res = _.isEqual(selected, "capitals") || _.isEqual(status, "unpublished") ? _.map(sel.questions, function(num, key){ num.label = key + 1; num.author = author; num.status = status; return num }) : _.rest(questions);
     Session.set("kitchen", res);
     return res;
   },
