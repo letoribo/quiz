@@ -135,12 +135,15 @@ _resetQuiz = function() {
         var img = "<img src='bug.png'>";
         $(img).appendTo("center");
       }
-    }  
+    } 
+    
+    	 
+    Template.quiz.onRendered(function () {
+      init();
+      Meteor.subscribe("quizzes");
+    }); 
 
     Template.quiz.helpers({
-    	rendered: function(){
-        init();
-      }, 
       isAdmin: function () {
         return status();
       },
@@ -192,6 +195,7 @@ _resetQuiz = function() {
 Deps.autorun(function () {
   Meteor.subscribe("players");
   Meteor.subscribe("logs");
+  Meteor.subscribe("quizzes");
 });
 
 Template.quiz.events({
@@ -199,7 +203,7 @@ Template.quiz.events({
     var id = this._id;
     alertify.confirm("Are you sure?", function (e) {
       if (e) {
-        Quizzes.remove(id); 
+        Meteor.call("deleteQuiz", id);
         _resetQuiz();
       }
     });
@@ -276,8 +280,8 @@ Template.questions.events({
     var selected = Session.get("selected_quiz");
     var count = Logs.find({quiz: selected, name: username}).count();
     //console.log("quiz.count ", count);
-    if (!_.isNull(Template.kitchen.questions())) Session.set("selected_qa", Template.kitchen.questions()[count]);
-    if (!_.isNull(Template.UKitchen.Uquestions())) Session.set("selected_qa", Template.UKitchen.Uquestions()[count])
+    if (!_.isNull(Session.get("kitchen")) && !_.isUndefined(Session.get("kitchen"))) Session.set("selected_qa", Session.get("kitchen")[count]);
+    if (!_.isNull(Session.get("ukitchen")) && !_.isUndefined(Session.get("ukitchen"))) Session.set("selected_qa", Session.get("ukitchen")[count])
     if (selected !== "new" && !_.isNull(selected) && Quizzes.findOne({name: selected}).status == "published") {
       // now get the question from the server asynchronous
       Meteor.call("getQuestion", Session.get("yourID"), selected, _onQuestionReceive);
@@ -358,14 +362,16 @@ var status = function(){
 /*
  * Template functions for ranking and players
  */
-Template.ranking.helpers({
-  rendered: function(){
-    if(Logs.find({name: username}).count() < 2) {
+    	 
+Template.ranking.onRendered(function () {
+  if(Logs.find({name: username}).count() < 2) {
     	alertify.set({ delay: 20000 }); alertify.log(
         "There are two types of rights: user and admin. User can view quizzes and fill them. Admin can what can user, but he can also create new quizzes. Registered user receives user rights. The administrator can make other users admins."
       );
     }
-  },
+}); 
+ 
+Template.ranking.helpers({
   players: function () {
     return Players.find({}, {sort: {score: -1, name: 1}});
   },
@@ -389,13 +395,16 @@ Template.ranking.events({
   }
 });
 
-Template.player.selected = function () { 
+
+Template.player.helpers({
+  selected: function () {
     var currentPlayer = Session.equals("playerId", this._id); 
     if (currentPlayer == true) {Session.set("yourID", this._id)}
     var equals = Session.equals("playerId", this._id);
     Session.set("currentPlayer", equals);
     return equals ? "warning" : "";
-  };	
+  }
+});
 
 Template.player.events({
   'click': function () {
@@ -446,7 +455,10 @@ Template.kitchen.helpers({
     var author = sel.author;
     var status = sel.status;
     var questions = _.map(sel.questions, function(num, key){ num.label = key; num.author = author; num.status = status; return num });
-    return _.isEqual(selected, "capitals") || _.isEqual(status, "unpublished") ? _.map(sel.questions, function(num, key){ num.label = key + 1; num.author = author; num.status = status; return num }) : _.rest(questions);
+    var quest = _.map(sel.questions, function(num, key){ num.label = key + 1; num.author = author; num.status = status; return num });
+    var res = _.isEqual(selected, "capitals") || _.isEqual(status, "unpublished") ? quest : _.rest(questions);
+    Session.set("kitchen", res);
+    return res;
   },
   statusIs: function(status) {
     return this.status === status;
@@ -495,10 +507,11 @@ Template.que.events({
   }
 });
 
+Template.que.onRendered(function () {
+  $('input[type="text"]').eq(0).focus();
+});
+
 Template.que.helpers({ 
-  rendered: function(){
-    $('input[type="text"]').eq(0).focus();
-  }, 
   selected_q: function () {
     return _.isUndefined(this.question);
   },
@@ -538,10 +551,13 @@ Template.chart.events({
   _resetQuiz();
  }
 });
+
+Template.chart.onRendered(function () {
+  Session.set("state", false);
+  return !_.isUndefined(Logs.findOne({quiz: Session.get("selected_quiz")})) ? chart() : null; 
+});
+
 Template.chart.helpers({ 
-  rendered: function(){Session.set("state", false);
-    return !_.isUndefined(Logs.findOne({quiz: Session.get("selected_quiz")})) ? chart() : null; 
-  },
   data: function () {
     var logdata = Logs.findOne({name: username});
     return {
@@ -571,7 +587,7 @@ var chart = function (){
       value: right, color: "#46BFBD", highlight: "#5AD3D1", label: "Was right"
       },
       {
-      value: _.size(Template.kitchen.questions() || Template.Kitchen.Uquestions()) - wrong - right,
+      value: _.size(Session.get("kitchen") || Session.get("ukitchen")) - wrong - right,
       color: "#AFC5C3",
       highlight: "#BFCFCC",
       label: "Still not answered"
@@ -607,8 +623,12 @@ Template.UKitchen.helpers({
     var selected = Session.get("selected_quiz"); 
     Meteor.call("getquizzes", selected);
     var sel = Quizzes.findOne({name: selected});
-    if (_.isUndefined(sel)) return null;
-    return selected == "capitals" ? _.map(sel.questions, function(num, key){num.label = key + 1; return num}) : _.map(_.rest(sel.questions), function(num, key){num.label = key + 1; return num});
+    if (_.isUndefined(sel)) return null;    
+    var questions = _.map(sel.questions, function(num, key){num.label = key + 1; return num});
+    var quest = _.map(_.rest(sel.questions), function(num, key){num.label = key + 1; return num});
+    var res = selected == "capitals" ? questions : quest;
+    Session.set("ukitchen", res);
+    return res;
   },
   nameIs: function(name) {
     return this.name === name;
@@ -634,13 +654,17 @@ _onUQ = function(error, q) {
 /*
  * Template functions for activity log
  */
-Template.activities.logs = function () {
-  return Logs.find({}, {limit: 10, sort: {timestamp: -1}});
-};
+Template.activities.helpers({ 
+  logs: function() {
+    return Logs.find({}, {limit: 10, sort: {timestamp: -1}});
+  }
+}); 
 
-Template.logentry.isError = function() {
-  return (this.score > 0) ? "success" : "error";
-};
+Template.logentry.helpers({ 
+  isError: function() {
+    return (this.score > 0) ? "success" : "error";
+  }
+});
   
 UI.body.events({
   'mouseover img': function() { 

@@ -107,6 +107,9 @@ Meteor.methods({
     }
     return playerId;
   },
+    deleteQuiz: function(id) {    
+    return Quizzes.remove(id);    
+  },
   // update the players score
   updateScore: function(playerId, points) {
     Players.update(playerId, {$inc: {score: points}});
