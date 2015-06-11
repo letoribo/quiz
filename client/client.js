@@ -40,7 +40,7 @@ _resetQuiz = function() {
     var user = Meteor.user();
     $(".container-fluid").show(); $("center").find('img').remove();
     if (user.profile) { 
-      username = user.profile.name == "" ? user.services.github.username : _.isUndefined(user.profile.name) ? user.profile.firstName : user.profile.name;
+      username = _.isUndefined(user.profile.name) ? user.profile.firstName : user.profile.name;
       Meteor.defer(function () {
         $( "#login-name-link" ).text( username + "▾");
       });
